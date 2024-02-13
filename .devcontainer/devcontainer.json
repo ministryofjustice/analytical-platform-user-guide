@@ -1,0 +1,14 @@
+{
+  "name": "analytical-platform",
+  "image": "ghcr.io/ministryofjustice/devcontainer-base:latest",
+  "features": {},
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "EditorConfig.EditorConfig",
+        "GitHub.vscode-github-actions",
+        "GitHub.vscode-pull-request-github"
+      ]
+    }
+  }
+}

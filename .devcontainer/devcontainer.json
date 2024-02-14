@@ -1,14 +1,21 @@
 {
-  "name": "analytical-platform",
+  "name": "analytical-platform-user-guide",
   "image": "ghcr.io/ministryofjustice/devcontainer-base:latest",
-  "features": {},
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
   "customizations": {
     "vscode": {
       "extensions": [
         "EditorConfig.EditorConfig",
         "GitHub.vscode-github-actions",
         "GitHub.vscode-pull-request-github"
-      ]
+      ],
+      "settings": {
+        "files.associations": {
+          "*.html.md.erb": "markdown"
+        }
+      }
     }
   }
 }

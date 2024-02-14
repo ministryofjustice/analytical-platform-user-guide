@@ -1,0 +1,21 @@
+---
+# See the available options: https://tdt-documentation.london.cloudapps.digital/configure_project/global_configuration/#configure-your-documentation-site
+
+host: https://user-guide.analytical-platform.service.justice.gov.uk
+show_govuk_logo: false
+service_name: Analytical Platform User Guide
+service_link: /
+phase: alpha
+header_links:
+  Slack: https://moj.enterprise.slack.com/archives/C04M8224WCV
+  GitHub: https://github.com/ministryofjustice/analytical-platform-user-guide
+enable_search: true
+collapsible_nav: true
+max_toc_heading_level: 3
+prevent_indexing: true
+show_contribution_banner: true
+github_repo: ministryofjustice/analytical-platform-user-guide
+github_branch: main
+full_service_name: Analytical Platform User Guide
+show_expiry: true
+show_review_banner: true

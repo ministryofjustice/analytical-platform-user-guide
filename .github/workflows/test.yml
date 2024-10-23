@@ -1,5 +1,5 @@
 ---
-name: Build and Test
+name: 🧪 Test
 
 on:
   pull_request:
@@ -26,8 +26,8 @@ jobs:
         run: |
           /usr/local/bin/package
 
-  test:
-    name: Test
+  link-checker:
+    name: Link Checker
     runs-on: ubuntu-latest
     permissions:
       contents: read

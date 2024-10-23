@@ -5,10 +5,8 @@ host: https://user-guide.analytical-platform.service.justice.gov.uk
 show_govuk_logo: false
 service_name: Analytical Platform User Guide
 service_link: /
-phase: alpha
 header_links:
   Slack: https://moj.enterprise.slack.com/archives/C04M8224WCV
-  GitHub: https://github.com/ministryofjustice/analytical-platform-user-guide
 enable_search: true
 collapsible_nav: true
 max_toc_heading_level: 3

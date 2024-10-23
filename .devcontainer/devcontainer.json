@@ -4,13 +4,6 @@
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
-  "postCreateCommand": "bash scripts/local.sh preview",
-  "portsAttributes": {
-    "4567": {
-      "label": "Preview",
-      "onAutoForward": "openPreview"
-    }
-  },
   "customizations": {
     "vscode": {
       "extensions": [

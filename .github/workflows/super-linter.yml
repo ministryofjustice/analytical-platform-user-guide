@@ -1,5 +1,5 @@
 ---
-name: Super-Linter
+name: 🦝 Super-Linter
 
 on:
   pull_request:
@@ -27,11 +27,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run Super-Linter
+      - name: Super-Linter
         id: super_linter
         uses: super-linter/super-linter/slim@b92721f792f381cedc002ecdbb9847a15ece5bb8 # v7.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEFAULT_BRANCH: main
           VALIDATE_CSS: false
           VALIDATE_JSCPD: false

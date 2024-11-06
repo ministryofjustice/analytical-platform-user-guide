@@ -9,4 +9,4 @@
 
 ## Previewing Locally
 
-To preview the user guide locally, you'll need Docker installed on your machine. Once Docker is set up, simply run the command `make preview`. After that, open your browser and navigate to http://127.0.0.1:4567. Changes are loaded dynamically.
+To preview the user guide locally, you'll need Docker installed on your machine. Once Docker is set up, simply run the command `make preview`. After that, open your browser and navigate to <http://127.0.0.1:4567>. Changes are loaded dynamically.

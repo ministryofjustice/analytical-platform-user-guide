@@ -1,0 +1,33 @@
+---
+owner_slack: "#analytical-platform"
+title: Runtime Templates
+last_reviewed_on: 2025-01-29
+review_in: 3 months
+weight: 0
+---
+
+# <%= current_page.data.title %>
+
+We provide repository templates for the supported runtimes, [Python](https://github.com/ministryofjustice/analytical-platform-airflow-python-template) and R (coming soon)
+
+These templates include
+
+* Github Actions workflow to build and scan your container for vulnerabilites with Trivy
+
+* Github Actions workflow to build and test your container's structure
+
+* Github Actions workflow to perform a dependency review of your repository, if its public
+
+* GitHub Actions workflow to build and push your container to Analytical Platform's container registry
+
+* Dependabot configuration for updating GitHub Actions, Docker and runtime dependencies such as Pip
+
+The GitHub Actions workflows call shared workflows we maintain [here](https://github.com/ministryofjustice/analytical-platform-airflow-github-actions)
+
+## Vulnerability scanning
+
+The Github Actions workflow to build and scan your container for vulnerabilites with Trivy, will alert on any CVEs marked `HIGH` or `CRITICAL` that have a fix available
+
+This workflow will download a configuration file associated with the release of the runtime container you are using, this configuration file contains CVEs that have been skipped by the Analytical Platform team
+
+## Configuration testing

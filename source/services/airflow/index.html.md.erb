@@ -12,7 +12,9 @@ weight: 0
 
 [Apache Airflow](https://airflow.apache.org/) is a workflow management platform for data engineering pipelines
 
-Pipelines are executed on Analytical Platform's Kubernetes infrastructure, and can interact with services such as Amazon Athena, Amazon Bedrock and Amazon S3
+Pipelines are executed on Analytical Platform's Kubernetes infrastructure, and can interact with services such as Amazon Bedrock and Amazon S3
+
+We only support pipelines that run using containers, we **do not allow** pipelines that use `BashOperator` or `PythonOperator`, this is because we run a multi-tenant Airflow service and do not permit running code on the Airflow control plane
 
 ## Concepts
 
@@ -22,7 +24,7 @@ We organise Airflow pipelines using environments, projects and workflows
 
   * Projects are a unit for grouping workflows dedicated to a distinct area, for example, BOLD, HMCTS or HMPPS
 
-  * Workflows are pipelines, or in Airflow terms they represent DAGs, this is where your provide information such as your repository name and release tag
+  * Workflows are pipelines, or in Airflow terms they represent DAGs, this is where you provide information such as your repository name and release tag
 
 ## Getting started
 
@@ -32,7 +34,10 @@ We organise Airflow pipelines using environments, projects and workflows
 
     > You can create this repository in either GitHub organisastion
     >
-    > Repository standards such as branch protection, are out of scope of this guidance
+    > Repository standards such as branch protection, are out of scope for this guidance
+    >
+    > For more information on runtime templates, please refer to [runtime templates](/services/airflow/runtime/templates)
+
 
     [Python](https://github.com/new?template_name=analytical-platform-airflow-python-template&template_owner=ministryofjustice)
 
@@ -42,21 +47,24 @@ We organise Airflow pipelines using environments, projects and workflows
 
 1. Update the Dockerfile instructions to copy your code and perform any package installations
 
-1. Create a release ([GitHub documentation](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository#creating-a-release))
+  > For more information on runtime images, please refer to [runtime images](/services/airflow/runtime/images)
 
-After a release is created, your container will be built and pushed to Analytical Platform's container registry
+1. Create a release (please refer to GitHub's [documentation]
+(https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository#creating-a-release))
+
+After a release is created, your container will be built and published to Analytical Platform's container registry
 
 An example repository can be found [here](https://github.com/moj-analytical-services/analytical-platform-airflow-python-example)
 
 ### Creating a project
 
-Create a directory for your project in the relevant environment, for example `environments/development/analytical-platform`
+To initialise a project, create a directory in the relevant environment in our [repository](https://github.com/ministryofjustice/analytical-platform-airflow/tree/main/environments), for example `environments/development/analytical-platform`
 
 ### Creating a workflow
 
-To create a workflow, you need to provide use with a workflow manifest under your project, for example `environments/development/analytical-platform/example-workflow/workflow.yml`
+To create a workflow, you need to provide us with a workflow manifest (`workflow.yml`) in your project, for example `environments/development/analytical-platform/example-workflow/workflow.yml`, where `example-workflow` is an identifier for your workflow's name
 
-The minimum requirements for a manifest look like this
+The minimum requirements for a workflow manifest look like this
 
 ```yaml
 tags:
@@ -102,7 +110,7 @@ dag:
 
 ### Compute profiles
 
-We provide a mechanism for requesting levels of CPU and memory from our Kubernetes cluster, and additionally specifying if your workflow can run on [on-demand](https://aws.amazon.com/ec2/pricing/on-demand/) or [spot](https://aws.amazon.com/ec2/spot/) compute.
+We provide a mechanism for requesting levels of CPU and memory from our Kubernetes cluster, and additionally specifying if your workflow can run on [on-demand](https://aws.amazon.com/ec2/pricing/on-demand/) or [spot](https://aws.amazon.com/ec2/spot/) compute
 
 This is done using the `compute_profile` key, and by default (if not specified), your workflow task will use `general-spot-1vcpu-4gb`, which means
 
@@ -199,7 +207,7 @@ mwaa:${project}-${workflow}
 
 ## Workflow secrets
 
-To provide your workflow with secrets, such as API keys or password, you can pass a list using the `secret` key in your workflow manifest, for example
+To provide your workflow with secrets, such as an API key or password, you can pass a list using the `secret` key in your workflow manifest, for example
 
 ```yaml
 secrets:

@@ -1,0 +1,22 @@
+---
+owner_slack: "#analytical-platform"
+title: Runtime Images
+last_reviewed_on: 2025-01-29
+review_in: 3 months
+weight: 0
+---
+
+# <%= current_page.data.title %>
+
+We provide container images for the supported runtimes, [Python](https://github.com/ministryofjustice/analytical-platform-airflow-python-base) and R (coming soon)
+
+These images include
+
+* Ubuntu base image
+
+* AWS CLI
+
+* NVIDIA GPU drivers
+
+Additionally we create a non-root user (`analyticalplatform`), and a working directory (`/opt/analyticalplatform`)
+

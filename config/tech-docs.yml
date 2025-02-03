@@ -6,7 +6,12 @@ show_govuk_logo: false
 service_name: Analytical Platform User Guide
 service_link: /
 header_links:
-  Slack: https://moj.enterprise.slack.com/archives/C04M8224WCV
+  Control Panel: https://controlpanel.services.analytical-platform.service.justice.gov.uk/
+  Status: https://status.analytical-platform.service.justice.gov.uk/posts/dashboard
+  Support: https://github.com/ministryofjustice/data-platform-support/issues/new?template=analytical-platform-support.yml
+footer_links:
+  Ask us a question on Slack: https://moj.enterprise.slack.com/archives/C06TFT94JTC
+  Raise an issue on GitHub: https://github.com/ministryofjustice/data-platform-support/issues/new?template=analytical-platform-support.yml
 enable_search: true
 collapsible_nav: true
 max_toc_heading_level: 3

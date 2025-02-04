@@ -10,69 +10,68 @@ weight: 0
 
 ## Overview
 
-[Apache Airflow](https://airflow.apache.org/) is a workflow management platform for data engineering pipelines
+[Apache Airflow](https://airflow.apache.org/) is a workflow management platform designed for data engineering pipelines.
 
-Pipelines are executed on Analytical Platform's Kubernetes infrastructure, and can interact with services such as Amazon Bedrock and Amazon S3
+Pipelines are executed on the Analytical Platform's Kubernetes infrastructure and can interact with services such as Amazon Bedrock and Amazon S3.
 
-Our Kubernetes infrastructure is connected to the MoJO Transit Gateway, so we can provide connectivity to Cloud Platform, Modernisation Platform, HMCTS SDP, if you require further connectivity, please reach out to use, and we'll evaluate your request
+Our Kubernetes infrastructure is connected to the MoJO Transit Gateway, providing connectivity to the Cloud Platform, Modernisation Platform, and HMCTS SDP. If you require further connectivity, please raise a [feature request](https://github.com/ministryofjustice/analytical-platform/issues/new?template=feature-request-template.yml).
 
-We only support pipelines that run using containers, we **do not allow** pipelines that use `BashOperator` or `PythonOperator`, this is because we run a multi-tenant Airflow service and do not permit running code on the Airflow control plane
+> **Please Note**: Analytical Platform Airflow does not support pipelines that use `BashOperator` or `PythonOperator`. We run a multi-tenant Airflow service and do not support running code on the Airflow control plane.
 
 ## Concepts
 
-We organise Airflow pipelines using environments, projects and workflows
+We organise Airflow pipelines using environments, projects, and workflows:
 
-  * Environments are the different stages of infrastructure we provide (development, test and production)
+- **Environments**: These are the different stages of infrastructure we provide (development, test, and production).
 
-  * Projects are a unit for grouping workflows dedicated to a distinct area, for example, BOLD, HMCTS or HMPPS
+- **Projects**: These are units for grouping workflows dedicated to a distinct area, for example, BOLD, HMCTS, or HMPPS.
 
-  * Workflows are pipelines, or in Airflow terms they represent DAGs, this is where you provide information such as your repository name and release tag
+- **Workflows**: These are pipelines, or in Airflow terms, they represent DAGs. This is where you provide information such as your repository name and release tag.
 
 ## Getting started
 
-You will need to provide us with a container, and a workflow manifest
+You will need to provide us with a container and a workflow manifest.
 
-The container will be built and pushed from a Github repository you create
+The container will be built and pushed from a GitHub repository you create and maintain.
 
-The workflow manifest will be hosted in our [GitHub repository](htts://github.com/ministryofjustice/analytical-platform-airflow)
+The workflow manifest will be hosted in our [GitHub repository](htts://github.com/ministryofjustice/analytical-platform-airflow).
 
 ### Creating a repository
 
 1. Create a repository using one of the provided runtime templates
 
-    > You can create this repository in either GitHub organisastion
+    > You can create this repository in either GitHub organisation.
     >
-    > Repository standards such as branch protection, are out of scope for this guidance
+    > Repository standards, such as branch protection, are out of scope for this guidance.
     >
-    > For more information on runtime templates, please refer to [runtime templates](/services/airflow/runtime/templates)
-
+    > For more information on runtime templates, please refer to [runtime templates](/services/airflow/runtime/templates).
 
     [Python](https://github.com/new?template_name=analytical-platform-airflow-python-template&template_owner=ministryofjustice)
 
     R (coming soon)
 
-1. Add your code
+2. Add your code
 
-1. Update the Dockerfile instructions to copy your code and perform any package installations
+3. Update the Dockerfile instructions to copy your code and perform any package installations.
 
-  > For more information on runtime images, please refer to [runtime images](/services/airflow/runtime/images)
+    > For more information on runtime images, please refer to [runtime images](/services/airflow/runtime/images).
 
-1. Create a release (please refer to GitHub's [documentation]
-(https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository#creating-a-release))
+4. Create a release (please refer to GitHub's [documentation]
+(https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository#creating-a-release)).
 
-After a release is created, your container will be built and published to Analytical Platform's container registry
+After a release is created, your container will be built and published to the Analytical Platform's container registry.
 
-An example repository can be found [here](https://github.com/moj-analytical-services/analytical-platform-airflow-python-example)
+An example repository can be found [here](https://github.com/moj-analytical-services/analytical-platform-airflow-python-example).
 
 ### Creating a project
 
-To initialise a project, create a directory in the relevant environment in our [repository](https://github.com/ministryofjustice/analytical-platform-airflow/tree/main/environments), for example `environments/development/analytical-platform`
+To initialise a project, create a directory in the relevant environment in our [repository](https://github.com/ministryofjustice/analytical-platform-airflow/tree/main/environments), for example, `environments/development/analytical-platform`.
 
 ### Creating a workflow
 
-To create a workflow, you need to provide us with a workflow manifest (`workflow.yml`) in your project, for example `environments/development/analytical-platform/example-workflow/workflow.yml`, where `example-workflow` is an identifier for your workflow's name
+To create a workflow, you need to provide us with a workflow manifest (`workflow.yml`) in your project, for example, `environments/development/analytical-platform/example-workflow/workflow.yml`, where `example-workflow` is an identifier for your workflow's name.
 
-The minimum requirements for a workflow manifest look like this
+The minimum requirements for a workflow manifest look like this:
 
 ```yaml
 tags:
@@ -84,19 +83,16 @@ dag:
   tag: 1.0.2
 ```
 
-`tags.business_unit` must be either `central`, `hq`, or `platforms`
-
-`tags.owner` must be an email address ending with `@justice.gov.uk`
-
-`dag.repository` is the name of the GitHub repository where your code is stored
-
-`dag.tag` is the tag you used when creating a release in your GitHub repository
+- `tags.business_unit` must be either `central`, `hq`, or `platforms`.
+- `tags.owner` must be an email address ending with `@justice.gov.uk`.
+- `dag.repository` is the name of the GitHub repository where your code is stored.
+- `dag.tag` is the tag you used when creating a release in your GitHub repository.
 
 ## Workflow tasks
 
-Providing the minimum keys under `dag` will create a main task that will exectute the entrypoint of your container, providing a set of default environment variables
+Providing the minimum keys under `dag` will create a main task that will execute the entrypoint of your container, providing a set of default environment variables:
 
-```
+```bash
 AWS_DEFAULT_REGION=eu-west-1
 AWS_ATHENA_QUERY_EXTRACT_REGION=eu-west-1
 AWS_DEFAULT_EXTRACT_REGION=eu-west-1
@@ -106,7 +102,7 @@ AWS_METADATA_SERVICE_NUM_ATTEMPTS=5
 
 ### Environment variables
 
-To pass extra environment variables, you can use the `env_vars`, for example
+To pass extra environment variables, you can use `env_vars`, for example:
 
 ```yaml
 dag:
@@ -118,25 +114,22 @@ dag:
 
 ### Compute profiles
 
-We provide a mechanism for requesting levels of CPU and memory from our Kubernetes cluster, and additionally specifying if your workflow can run on [on-demand](https://aws.amazon.com/ec2/pricing/on-demand/) or [spot](https://aws.amazon.com/ec2/spot/) compute
+We provide a mechanism for requesting levels of CPU and memory from our Kubernetes cluster, and additionally specifying if your workflow can run on [on-demand](https://aws.amazon.com/ec2/pricing/on-demand/) or [spot](https://aws.amazon.com/ec2/spot/) compute.
 
-This is done using the `compute_profile` key, and by default (if not specified), your workflow task will use `general-spot-1vcpu-4gb`, which means
+This is done using the `compute_profile` key, and by default (if not specified), your workflow task will use `general-spot-1vcpu-4gb`, which means:
 
-  * `general` the compute fleet
+- `general`: the compute fleet
+- `spot`: the compute type
+- `1vcpu`: 1 vCPU is guaranteed
+- `4gb`: 4GB of memory is guaranteed
 
-  * `spot` the compute type
+In addition to the `general` fleet, we also offer `gpu`, which provides your workflow with an NVIDIA GPU.
 
-  * `1vcpu` 1 vCPU is guaranteed
-
-  * `4gb` 4Gb of memory is guaranteed
-
-In addition to the `general` fleet, we also offer `gpu` which provides your workflow with an NVIDIA GPU
-
-The full list of available compute profiles can be found [here](https://github.com/ministryofjustice/analytical-platform-airflow/blob/main/scripts/workflow_schema_validation/schema.json#L30-L57)
+The full list of available compute profiles can be found [here](https://github.com/ministryofjustice/analytical-platform-airflow/blob/main/scripts/workflow_schema_validation/schema.json#L30-L57).
 
 ### Multi-task
 
-Workflows can also run mutliple tasks, with dependencies on other tasks in the same workflow, to enable this, specify the `tasks` key, for example
+Workflows can also run multiple tasks, with dependencies on other tasks in the same workflow. To enable this, specify the `tasks` key, for example:
 
 ```yaml
 dag:
@@ -161,17 +154,17 @@ dag:
       dependencies: [phase-one, phase-two]
 ```
 
-Tasks take the same keys (`env_vars` and `compute_profile`), and additionally can also take `dependencies` which can be used to make a task dependent on other tasks completing successfully
+Tasks take the same keys (`env_vars` and `compute_profile`) and can also take `dependencies`, which can be used to make a task dependent on other tasks completing successfully.
 
-`compute_profile` can either be specifed at `dag.compute_profile` to set it for all, or `dag.tasks.*.compute_profile` to override it for a specific task
+`compute_profile` can either be specified at `dag.compute_profile` to set it for all tasks, or at `dag.tasks.*.compute_profile` to override it for a specific task.
 
 ## Workflow identity
 
-By default for each workflow, we create an associated IAM policy and IAM role in Analytical Platform's Data Production AWS account
+By default, for each workflow, we create an associated IAM policy and IAM role in the Analytical Platform's Data Production AWS account.
 
-The name of your workflow's role is derived from it's environment, project and workflow `airflow-${environment}-${project}-${workflow}`
+The name of your workflow's role is derived from its environment, project, and workflow: `airflow-${environment}-${project}-${workflow}`.
 
-To extend the permissions of your workflow's IAM policy, you can do so under the `iam` key in your workflow manifest, for example
+To extend the permissions of your workflow's IAM policy, you can do so under the `iam` key in your workflow manifest, for example:
 
 ```yaml
 iam:
@@ -186,28 +179,25 @@ iam:
     - mojap-compute-development-dummy/readwrite2/*
 ```
 
-`iam.bedrock` when set to true enables Amazon Bedrock access
-
-`iam.kms` is a list of KMS ARNs that can be used for encrypt and decrypt operations
-
-`iam.s3_read_only` is a list of Amazon S3 paths to provide read-only access
-
-`iam.s3_read_write` is a list of Amazon S3 paths to provide read-write access
+- `iam.bedrock`: When set to true, enables Amazon Bedrock access.
+- `iam.kms`: A list of KMS ARNs that can be used for encrypt and decrypt operations.
+- `iam.s3_read_only`: A list of Amazon S3 paths to provide read-only access.
+- `iam.s3_read_write`: A list of Amazon S3 paths to provide read-write access.
 
 ### Advanced configuration
 
 #### External IAM roles
 
-If you would like your workflow's identity to run in an account that is not Analytical Platform Data Production, you can provide the ARN using `iam.external_role`, for example
+If you would like your workflow's identity to run in an account that is not Analytical Platform Data Production, you can provide the ARN using `iam.external_role`, for example:
 
 ```yaml
 iam:
   external_role: arn:aws:iam::123456789012:role/this-is-not-a-real-role
 ```
 
-You must have an IAM Identity Provider using the associated environment's Amazon EKS OpenID Connect provider URL, please refer to Amazon's [documentation](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html#_create_oidc_provider_console), we can provide the Amazon EKS OpenID Connect provider URL upon request
+You must have an IAM Identity Provider using the associated environment's Amazon EKS OpenID Connect provider URL. Please refer to [Amazon's documentation](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html#_create_oidc_provider_console). We can provide the Amazon EKS OpenID Connect provider URL upon request.
 
-You must also create a role that is enabled for [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html), we recommend using [this](https://registry.terraform.io/modules/terraform-aws-modules/iam/aws/latest/submodules/iam-role-for-service-accounts-eks) Terraform module, you must use the following when referencing services accounts
+You must also create a role that is enabled for [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html). We recommend using [this](https://registry.terraform.io/modules/terraform-aws-modules/iam/aws/latest/submodules/iam-role-for-service-accounts-eks) Terraform module. You must use the following when referencing service accounts:
 
 ```
 mwaa:${project}-${workflow}
@@ -215,7 +205,7 @@ mwaa:${project}-${workflow}
 
 ## Workflow secrets
 
-To provide your workflow with secrets, such as a username or password, you can pass a list using the `secret` key in your workflow manifest, for example
+To provide your workflow with secrets, such as a username or password, you can pass a list using the `secrets` key in your workflow manifest, for example:
 
 ```yaml
 secrets:
@@ -223,15 +213,19 @@ secrets:
   - password
 ```
 
-This will create an encrypted secret in AWS Secrets Manager in the following path `/airflow/${environment}/${project}/${workflow}/${secret_id}`, and is then injected into your container using an environment variable, for example
+This will create an encrypted secret in AWS Secrets Manager in the following path: `/airflow/${environment}/${project}/${workflow}/${secret_id}`, and it will then be injected into your container using an environment variable, for example:
 
 ```bash
 SECRET_USERNAME=xxxxxx
 SECRET_PASSWORD=yyyyyy
 ```
 
-Secrets with hypens (`-`) will be converted to use underscores (`_`) for the environment variable
+Secrets with hyphens (`-`) will be converted to use underscores (`_`) for the environment variable.
 
 ### Updating a secret value
 
-Secrets are intially created with a placeholder value, to update this, log in to the Analytical Platform Data Production AWS account, and update the value
+Secrets are initially created with a placeholder value. To update this, log in to the Analytical Platform Data Production AWS account and update the value.
+
+## Troubleshooting
+
+Please refer to [Airflow Troubleshooting](/services/airflow/troubleshooting)

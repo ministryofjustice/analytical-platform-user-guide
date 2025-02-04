@@ -34,7 +34,7 @@ You will need to provide us with a container and a workflow manifest.
 
 The container will be built and pushed from a GitHub repository you create and maintain.
 
-The workflow manifest will be hosted in our [GitHub repository](htts://github.com/ministryofjustice/analytical-platform-airflow).
+The workflow manifest will be hosted in our [GitHub repository](https://github.com/ministryofjustice/analytical-platform-airflow).
 
 ### Creating a repository
 
@@ -44,7 +44,7 @@ The workflow manifest will be hosted in our [GitHub repository](htts://github.co
     >
     > Repository standards, such as branch protection, are out of scope for this guidance.
     >
-    > For more information on runtime templates, please refer to [runtime templates](/services/airflow/runtime/templates).
+    > For more information on runtime templates, please refer to [runtime templates](#runtime-templates).
 
     [Python](https://github.com/new?template_name=analytical-platform-airflow-python-template&template_owner=ministryofjustice)
 
@@ -54,7 +54,7 @@ The workflow manifest will be hosted in our [GitHub repository](htts://github.co
 
 3. Update the Dockerfile instructions to copy your code and perform any package installations.
 
-    > For more information on runtime images, please refer to [runtime images](/services/airflow/runtime/images).
+    > For more information on runtime images, please refer to [runtime images](#runtime-images).
 
 4. Create a release (please refer to GitHub's [documentation]
 (https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository#creating-a-release)).
@@ -226,6 +226,48 @@ Secrets with hyphens (`-`) will be converted to use underscores (`_`) for the en
 
 Secrets are initially created with a placeholder value. To update this, log in to the Analytical Platform Data Production AWS account and update the value.
 
+## Runtime templates
+
+We provide repository templates for the supported runtimes, [Python](https://github.com/ministryofjustice/analytical-platform-airflow-python-template) and R (coming soon).
+
+These templates include:
+
+- GitHub Actions workflow to build and scan your container for vulnerabilities with Trivy.
+- GitHub Actions workflow to build and test your container's structure.
+- GitHub Actions workflow to perform a dependency review of your repository, if it's public.
+- GitHub Actions workflow to build and push your container to the Analytical Platform's container registry.
+- Dependabot configuration for updating GitHub Actions, Docker, and dependencies such as Pip.
+
+The GitHub Actions workflows call shared workflows we maintain here.
+
+### Vulnerability scanning
+
+The GitHub Actions workflow to build and scan your container for vulnerabilities with Trivy will alert on any CVEs marked `HIGH` or `CRITICAL` that have a fix available.
+
+### Configuartion testing
+
+To ensure your container is running as the right user, we perform a test using Google's [Container Structure Test](https://github.com/GoogleContainerTools/container-structure-test) package.
+
+The source for the test can be found [here](https://github.com/ministryofjustice/analytical-platform-airflow-github-actions/blob/main/assets/container-structure-test/container-structure-test.yml).
+
+## Runtime images
+
+We provide container images for the supported runtimes, [Python](https://github.com/ministryofjustice/analytical-platform-airflow-python-base) and R (coming soon).
+
+These images include:
+
+- Ubuntu base image
+- AWS CLI
+- NVIDIA GPU drivers
+
+Additionally, we create a non-root user (`analyticalplatform`) and a working directory (`/opt/analyticalplatform`).
+
+## Migration from Data Engineering Airflow
+
+_TBC_
+
 ## Troubleshooting
 
-Please refer to [Airflow Troubleshooting](/services/airflow/troubleshooting)
+### Vulnerability scanning
+
+If a CVE is detected in your container, your build will fail. You will need to either update the offending package or skip the CVE by adding it to `.trivyignore` in the root of your repository.

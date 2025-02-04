@@ -12,4 +12,6 @@ weight: 0
 
 ### Vulnerability scanning
 
-_TBC_
+Trivy will scan for any CVEs marked `HIGH` or `CRITICAL` that have a fix available, in the [supported libraries](https://trivy.dev/v0.59/docs/coverage/language/)
+
+If a CVE is detected, your build will fail, and you need to either update the offending package, or skip the CVE by adding it to `.trivyignore` in the root of your repository

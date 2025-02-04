@@ -14,6 +14,8 @@ weight: 0
 
 Pipelines are executed on Analytical Platform's Kubernetes infrastructure, and can interact with services such as Amazon Bedrock and Amazon S3
 
+Our Kubernetes infrastructure is connected to the MoJO Transit Gateway, so we can provide connectivity to Cloud Platform, Modernisation Platform, HMCTS SDP, if you require further connectivity, please reach out to use, and we'll evaluate your request
+
 We only support pipelines that run using containers, we **do not allow** pipelines that use `BashOperator` or `PythonOperator`, this is because we run a multi-tenant Airflow service and do not permit running code on the Airflow control plane
 
 ## Concepts

@@ -17,7 +17,7 @@ Pipelines are executed on the Analytical Platform's Kubernetes infrastructure an
 
 Our Kubernetes infrastructure is connected to the MoJO Transit Gateway, providing connectivity to the Cloud Platform, Modernisation Platform, and HMCTS SDP. If you require further connectivity, please raise a [feature request](https://github.com/ministryofjustice/analytical-platform/issues/new?template=feature-request-template.yml).
 
-> **Please Note**: Analytical Platform Airflow does not support pipelines that use `BashOperator` or `PythonOperator`.
+> **Please note**: Analytical Platform Airflow does not support pipelines that use `BashOperator` or `PythonOperator`.
 This is because we run a multi-tenant Airflow service and do not permit running code on the Airflow control plane, which is where non-container operators would run.
 
 ## Concepts

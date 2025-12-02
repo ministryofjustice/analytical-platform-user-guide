@@ -361,24 +361,6 @@ jobs:
               return;
             }
 
-            // Helper function to upload image and get URL
-            async function uploadImage(imagePath, imageName) {
-              const imageData = fs.readFileSync(imagePath);
-              const base64Data = imageData.toString('base64');
-
-              // Upload to repository using the Git Data API
-              const { data: blob } = await github.rest.git.createBlob({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                content: base64Data,
-                encoding: 'base64',
-              });
-
-              // Return a raw URL that can be used in markdown
-              // We'll use the blob SHA to create a permanent link
-              return `https://github.com/${context.repo.owner}/${context.repo.repo}/blob/${blob.sha}/${imageName}?raw=true`;
-            }
-
             // Get artifact URL for download link
             const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
               owner: context.repo.owner,
@@ -395,66 +377,49 @@ jobs:
             let body = '## 📸 Page Screenshots\n\n';
             body += 'This PR includes changes to documentation pages. Screenshots have been captured for review.\n\n';
 
-            // New Pages Section with embedded images
+            // New Pages Section
             if (manifest.newPages.length > 0) {
               body += '### ✨ New Pages\n\n';
-
+              body += '| Page | Status |\n';
+              body += '|------|--------|\n';
               for (const item of manifest.newPages) {
-                const screenshotPath = path.join(screenshotDir, 'new', item.filename);
-
-                body += `<details>\n<summary><strong>${item.urlPath}</strong> 🆕</summary>\n\n`;
-
-                if (fs.existsSync(screenshotPath)) {
-                  const imageData = fs.readFileSync(screenshotPath);
-                  const base64 = imageData.toString('base64');
-                  body += `![Screenshot of ${item.urlPath}](data:image/png;base64,${base64})\n\n`;
-                } else {
-                  body += `*Screenshot not available*\n\n`;
-                }
-
-                body += `</details>\n\n`;
+                body += `| \`${item.urlPath}\` | 🆕 New |\n`;
               }
+              body += '\n';
             }
 
-            // Modified Pages Section with before/after images
+            // Modified Pages Section
             if (manifest.modifiedPages.length > 0) {
               body += '### 📝 Updated Pages\n\n';
-
+              body += '| Page | Status |\n';
+              body += '|------|--------|\n';
               for (const item of manifest.modifiedPages) {
-                const beforePath = path.join(screenshotDir, 'modified', 'before', item.filename);
-                const afterPath = path.join(screenshotDir, 'modified', 'after', item.filename);
-
-                body += `<details>\n<summary><strong>${item.urlPath}</strong> ✏️</summary>\n\n`;
-
-                body += `| Before | After |\n`;
-                body += `|--------|-------|\n`;
-
-                let beforeImg = '*Not available*';
-                let afterImg = '*Not available*';
-
-                if (fs.existsSync(beforePath)) {
-                  const imageData = fs.readFileSync(beforePath);
-                  const base64 = imageData.toString('base64');
-                  beforeImg = `<img src="data:image/png;base64,${base64}" width="400" />`;
-                }
-
-                if (fs.existsSync(afterPath)) {
-                  const imageData = fs.readFileSync(afterPath);
-                  const base64 = imageData.toString('base64');
-                  afterImg = `<img src="data:image/png;base64,${base64}" width="400" />`;
-                }
-
-                body += `| ${beforeImg} | ${afterImg} |\n\n`;
-                body += `</details>\n\n`;
+                body += `| \`${item.urlPath}\` | ✏️ Modified |\n`;
               }
+              body += '\n';
             }
 
             // Download section
             body += '---\n\n';
+            body += '### 📥 Download Screenshots\n\n';
 
             if (artifactUrl) {
-              body += `📥 [**Download full resolution screenshots**](${artifactUrl})\n\n`;
+              body += `[**Download all screenshots**](${artifactUrl})\n\n`;
             }
+
+            body += '**Artifact structure:**\n';
+            body += '```\n';
+            body += 'screenshots/\n';
+            if (manifest.newPages.length > 0) {
+              body += '├── new/              # Screenshots of new pages\n';
+            }
+            if (manifest.modifiedPages.length > 0) {
+              body += '├── modified/\n';
+              body += '│   ├── before/       # Pages before changes (from main)\n';
+              body += '│   └── after/        # Pages after changes (from this PR)\n';
+            }
+            body += '└── manifest.json     # Index of all screenshots\n';
+            body += '```\n\n';
 
             body += '> 📐 Screenshots captured at 1280x800 viewport (full page scroll).\n';
 

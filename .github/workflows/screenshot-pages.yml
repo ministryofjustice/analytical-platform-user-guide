@@ -120,13 +120,14 @@ jobs:
         id: build_pr_site
         if: steps.detect_changes.outputs.has_changes == 'true'
         run: |
+          mkdir -p ${{ github.workspace }}/pr-build
           docker run --rm \
             --name tech-docs-github-pages-publisher \
             --volume ${{ github.workspace }}/pr-branch/config:/tech-docs-github-pages-publisher/config \
             --volume ${{ github.workspace }}/pr-branch/source:/tech-docs-github-pages-publisher/source \
-            --volume ${{ github.workspace }}/pr-build:/tech-docs-github-pages-publisher/build \
+            --volume ${{ github.workspace }}/pr-build:/tech-docs-github-pages-publisher/output \
             ghcr.io/ministryofjustice/tech-docs-github-pages-publisher@sha256:35699473dbeefeeb8b597de024125a241277ee03587d5fe8e72545e4b27b33f8 \
-            /usr/local/bin/package
+            sh -c "/usr/local/bin/package && cp artifact.tar /tech-docs-github-pages-publisher/output/"
 
           mkdir -p ${{ github.workspace }}/site-pr
           tar -xf ${{ github.workspace }}/pr-build/artifact.tar -C ${{ github.workspace }}/site-pr
@@ -135,13 +136,14 @@ jobs:
         id: build_base_site
         if: steps.detect_changes.outputs.has_modified_pages == 'true'
         run: |
+          mkdir -p ${{ github.workspace }}/base-build
           docker run --rm \
             --name tech-docs-github-pages-publisher \
             --volume ${{ github.workspace }}/base-branch/config:/tech-docs-github-pages-publisher/config \
             --volume ${{ github.workspace }}/base-branch/source:/tech-docs-github-pages-publisher/source \
-            --volume ${{ github.workspace }}/base-build:/tech-docs-github-pages-publisher/build \
+            --volume ${{ github.workspace }}/base-build:/tech-docs-github-pages-publisher/output \
             ghcr.io/ministryofjustice/tech-docs-github-pages-publisher@sha256:35699473dbeefeeb8b597de024125a241277ee03587d5fe8e72545e4b27b33f8 \
-            /usr/local/bin/package
+            sh -c "/usr/local/bin/package && cp artifact.tar /tech-docs-github-pages-publisher/output/"
 
           mkdir -p ${{ github.workspace }}/site-base
           tar -xf ${{ github.workspace }}/base-build/artifact.tar -C ${{ github.workspace }}/site-base

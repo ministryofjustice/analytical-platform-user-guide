@@ -40,12 +40,14 @@ jobs:
       - name: Detect Changed Pages
         id: detect_changes
         working-directory: pr-branch
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
           # Get new files (added in this PR)
-          NEW_FILES=$(git diff --name-only --diff-filter=A origin/${{ github.base_ref }}...HEAD | grep -E '^source/.*\.(md\.erb|md|html\.erb|html)$' || true)
+          NEW_FILES=$(git diff --name-only --diff-filter=A "origin/${BASE_REF}...HEAD" | grep -E '^source/.*\.(md\.erb|md|html\.erb|html)$' || true)
 
           # Get modified files (changed in this PR)
-          MODIFIED_FILES=$(git diff --name-only --diff-filter=M origin/${{ github.base_ref }}...HEAD | grep -E '^source/.*\.(md\.erb|md|html\.erb|html)$' || true)
+          MODIFIED_FILES=$(git diff --name-only --diff-filter=M "origin/${BASE_REF}...HEAD" | grep -E '^source/.*\.(md\.erb|md|html\.erb|html)$' || true)
 
           # Function to convert file path to URL path
           convert_to_url() {
@@ -79,11 +81,11 @@ jobs:
               echo "new_url_paths<<EOF"
               echo "$NEW_URL_PATHS"
               echo "EOF"
-            } >> $GITHUB_OUTPUT
-            echo "has_new_pages=true" >> $GITHUB_OUTPUT
+            } >> "$GITHUB_OUTPUT"
+            echo "has_new_pages=true" >> "$GITHUB_OUTPUT"
           else
             echo "No new pages detected"
-            echo "has_new_pages=false" >> $GITHUB_OUTPUT
+            echo "has_new_pages=false" >> "$GITHUB_OUTPUT"
           fi
 
           # Process modified files
@@ -102,53 +104,53 @@ jobs:
               echo "modified_url_paths<<EOF"
               echo "$MODIFIED_URL_PATHS"
               echo "EOF"
-            } >> $GITHUB_OUTPUT
-            echo "has_modified_pages=true" >> $GITHUB_OUTPUT
+            } >> "$GITHUB_OUTPUT"
+            echo "has_modified_pages=true" >> "$GITHUB_OUTPUT"
           else
             echo "No modified pages detected"
-            echo "has_modified_pages=false" >> $GITHUB_OUTPUT
+            echo "has_modified_pages=false" >> "$GITHUB_OUTPUT"
           fi
 
           # Check if we have any changes at all
           if [ -z "$NEW_FILES" ] && [ -z "$MODIFIED_FILES" ]; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
-            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build PR Branch Site
         id: build_pr_site
         if: steps.detect_changes.outputs.has_changes == 'true'
         run: |
-          mkdir -p ${{ github.workspace }}/pr-build
+          mkdir -p "${GITHUB_WORKSPACE}/pr-build"
           docker run --rm \
             --name tech-docs-github-pages-publisher \
-            --volume ${{ github.workspace }}/pr-branch/config:/tech-docs-github-pages-publisher/config \
-            --volume ${{ github.workspace }}/pr-branch/source:/tech-docs-github-pages-publisher/source \
-            --volume ${{ github.workspace }}/pr-build:/tech-docs-github-pages-publisher/build \
+            --volume "${GITHUB_WORKSPACE}/pr-branch/config:/tech-docs-github-pages-publisher/config" \
+            --volume "${GITHUB_WORKSPACE}/pr-branch/source:/tech-docs-github-pages-publisher/source" \
+            --volume "${GITHUB_WORKSPACE}/pr-build:/tech-docs-github-pages-publisher/build" \
             --entrypoint /bin/sh \
             ghcr.io/ministryofjustice/tech-docs-github-pages-publisher@sha256:35699473dbeefeeb8b597de024125a241277ee03587d5fe8e72545e4b27b33f8 \
             -c "/usr/local/bin/package && cp artifact.tar build/"
 
-          mkdir -p ${{ github.workspace }}/site-pr
-          tar -xf ${{ github.workspace }}/pr-build/artifact.tar -C ${{ github.workspace }}/site-pr
+          mkdir -p "${GITHUB_WORKSPACE}/site-pr"
+          tar -xf "${GITHUB_WORKSPACE}/pr-build/artifact.tar" -C "${GITHUB_WORKSPACE}/site-pr"
 
       - name: Build Base Branch Site
         id: build_base_site
         if: steps.detect_changes.outputs.has_modified_pages == 'true'
         run: |
-          mkdir -p ${{ github.workspace }}/base-build
+          mkdir -p "${GITHUB_WORKSPACE}/base-build"
           docker run --rm \
             --name tech-docs-github-pages-publisher \
-            --volume ${{ github.workspace }}/base-branch/config:/tech-docs-github-pages-publisher/config \
-            --volume ${{ github.workspace }}/base-branch/source:/tech-docs-github-pages-publisher/source \
-            --volume ${{ github.workspace }}/base-build:/tech-docs-github-pages-publisher/build \
+            --volume "${GITHUB_WORKSPACE}/base-branch/config:/tech-docs-github-pages-publisher/config" \
+            --volume "${GITHUB_WORKSPACE}/base-branch/source:/tech-docs-github-pages-publisher/source" \
+            --volume "${GITHUB_WORKSPACE}/base-build:/tech-docs-github-pages-publisher/build" \
             --entrypoint /bin/sh \
             ghcr.io/ministryofjustice/tech-docs-github-pages-publisher@sha256:35699473dbeefeeb8b597de024125a241277ee03587d5fe8e72545e4b27b33f8 \
             -c "/usr/local/bin/package && cp artifact.tar build/"
 
-          mkdir -p ${{ github.workspace }}/site-base
-          tar -xf ${{ github.workspace }}/base-build/artifact.tar -C ${{ github.workspace }}/site-base
+          mkdir -p "${GITHUB_WORKSPACE}/site-base"
+          tar -xf "${GITHUB_WORKSPACE}/base-build/artifact.tar" -C "${GITHUB_WORKSPACE}/site-base"
 
       - name: Setup Node.js
         if: steps.detect_changes.outputs.has_changes == 'true'
@@ -165,10 +167,16 @@ jobs:
       - name: Take Screenshots
         id: take_screenshots
         if: steps.detect_changes.outputs.has_changes == 'true'
+        env:
+          SITE_PR_DIR: ${{ github.workspace }}/site-pr
+          SITE_BASE_DIR: ${{ github.workspace }}/site-base
+          NEW_URL_PATHS: ${{ steps.detect_changes.outputs.new_url_paths }}
+          MODIFIED_URL_PATHS: ${{ steps.detect_changes.outputs.modified_url_paths }}
+          SCREENSHOT_DIR: ${{ github.workspace }}/screenshots
         run: |
-          mkdir -p ${{ github.workspace }}/screenshots/new
-          mkdir -p ${{ github.workspace }}/screenshots/modified/before
-          mkdir -p ${{ github.workspace }}/screenshots/modified/after
+          mkdir -p "$SCREENSHOT_DIR/new"
+          mkdir -p "$SCREENSHOT_DIR/modified/before"
+          mkdir -p "$SCREENSHOT_DIR/modified/after"
 
           cat > screenshot.js << 'SCRIPT_EOF'
           const { chromium } = require('playwright');
@@ -322,11 +330,6 @@ jobs:
           main().catch(console.error);
           SCRIPT_EOF
 
-          SITE_PR_DIR="${{ github.workspace }}/site-pr" \
-          SITE_BASE_DIR="${{ github.workspace }}/site-base" \
-          NEW_URL_PATHS="${{ steps.detect_changes.outputs.new_url_paths }}" \
-          MODIFIED_URL_PATHS="${{ steps.detect_changes.outputs.modified_url_paths }}" \
-          SCREENSHOT_DIR="${{ github.workspace }}/screenshots" \
           node screenshot.js
 
       - name: Upload Screenshots
@@ -341,12 +344,14 @@ jobs:
       - name: Post Screenshots to PR
         if: steps.detect_changes.outputs.has_changes == 'true'
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        env:
+          SCREENSHOT_DIR: ${{ github.workspace }}/screenshots
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
 
-            const screenshotDir = '${{ github.workspace }}/screenshots';
+            const screenshotDir = process.env.SCREENSHOT_DIR;
             const manifestPath = path.join(screenshotDir, 'manifest.json');
 
             if (!fs.existsSync(manifestPath)) {

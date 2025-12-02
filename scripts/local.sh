@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 MODE="${1:-preview}"
-TECH_DOCS_PUBLISHER_IMAGE="ghcr.io/ministryofjustice/tech-docs-github-pages-publisher@sha256:35699473dbeefeeb8b597de024125a241277ee03587d5fe8e72545e4b27b33f8" # v5.0.0
+TECH_DOCS_PUBLISHER_IMAGE="ghcr.io/ministryofjustice/tech-docs-github-pages-publisher@sha256:b26b8fcba6f8feaa46a64bd96a081cb09db21daeb6d382c0f9cc370ff5b8a34a" # v6.2.0
 
 case ${MODE} in
 package | preview)

@@ -1,0 +1,464 @@
+---
+name: 📸 Screenshot Pages
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "source/**/*.md.erb"
+      - "source/**/*.md"
+      - "source/**/*.html.erb"
+      - "source/**/*.html"
+
+permissions: {}
+
+jobs:
+  screenshot:
+    name: Screenshot Pages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout PR Branch
+        id: checkout_pr
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          path: pr-branch
+
+      - name: Checkout Base Branch
+        id: checkout_base
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ github.base_ref }}
+          path: base-branch
+
+      - name: Detect Changed Pages
+        id: detect_changes
+        working-directory: pr-branch
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          # Get new files (added in this PR)
+          NEW_FILES=$(git diff --name-only --diff-filter=A "origin/${BASE_REF}...HEAD" | grep -E '^source/.*\.(md\.erb|md|html\.erb|html)$' || true)
+
+          # Get modified files (changed in this PR)
+          MODIFIED_FILES=$(git diff --name-only --diff-filter=M "origin/${BASE_REF}...HEAD" | grep -E '^source/.*\.(md\.erb|md|html\.erb|html)$' || true)
+
+          # Function to convert file path to URL path
+          convert_to_url() {
+            local file="$1"
+            local url_path="${file#source/}"
+            url_path="${url_path%.md.erb}"
+            url_path="${url_path%.html.erb}"
+            url_path="${url_path%.md}"
+            if [[ ! "$url_path" =~ \.html$ ]]; then
+              url_path="${url_path}.html"
+            fi
+            if [[ "$url_path" == "index.html" ]]; then
+              url_path="/"
+            fi
+            echo "$url_path"
+          }
+
+          # Process new files
+          if [ -n "$NEW_FILES" ]; then
+            echo "New pages detected:"
+            echo "$NEW_FILES"
+
+            NEW_URL_PATHS=""
+            while IFS= read -r file; do
+              url_path=$(convert_to_url "$file")
+              NEW_URL_PATHS="${NEW_URL_PATHS}${url_path}"$'\n'
+            done <<< "$NEW_FILES"
+            NEW_URL_PATHS=$(echo "$NEW_URL_PATHS" | sed '/^$/d')
+
+            {
+              echo "new_url_paths<<EOF"
+              echo "$NEW_URL_PATHS"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            echo "has_new_pages=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No new pages detected"
+            echo "has_new_pages=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          # Process modified files
+          if [ -n "$MODIFIED_FILES" ]; then
+            echo "Modified pages detected:"
+            echo "$MODIFIED_FILES"
+
+            MODIFIED_URL_PATHS=""
+            while IFS= read -r file; do
+              url_path=$(convert_to_url "$file")
+              MODIFIED_URL_PATHS="${MODIFIED_URL_PATHS}${url_path}"$'\n'
+            done <<< "$MODIFIED_FILES"
+            MODIFIED_URL_PATHS=$(echo "$MODIFIED_URL_PATHS" | sed '/^$/d')
+
+            {
+              echo "modified_url_paths<<EOF"
+              echo "$MODIFIED_URL_PATHS"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            echo "has_modified_pages=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No modified pages detected"
+            echo "has_modified_pages=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          # Check if we have any changes at all
+          if [ -z "$NEW_FILES" ] && [ -z "$MODIFIED_FILES" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build PR Branch Site
+        id: build_pr_site
+        if: steps.detect_changes.outputs.has_changes == 'true'
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/pr-build"
+          docker run --rm \
+            --name tech-docs-github-pages-publisher \
+            --volume "${GITHUB_WORKSPACE}/pr-branch/config:/tech-docs-github-pages-publisher/config" \
+            --volume "${GITHUB_WORKSPACE}/pr-branch/source:/tech-docs-github-pages-publisher/source" \
+            --volume "${GITHUB_WORKSPACE}/pr-build:/tech-docs-github-pages-publisher/build" \
+            --entrypoint /bin/sh \
+            ghcr.io/ministryofjustice/tech-docs-github-pages-publisher@sha256:35699473dbeefeeb8b597de024125a241277ee03587d5fe8e72545e4b27b33f8 \
+            -c "/usr/local/bin/package && cp artifact.tar build/"
+
+          mkdir -p "${GITHUB_WORKSPACE}/site-pr"
+          tar -xf "${GITHUB_WORKSPACE}/pr-build/artifact.tar" -C "${GITHUB_WORKSPACE}/site-pr"
+
+      - name: Build Base Branch Site
+        id: build_base_site
+        if: steps.detect_changes.outputs.has_modified_pages == 'true'
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/base-build"
+          docker run --rm \
+            --name tech-docs-github-pages-publisher \
+            --volume "${GITHUB_WORKSPACE}/base-branch/config:/tech-docs-github-pages-publisher/config" \
+            --volume "${GITHUB_WORKSPACE}/base-branch/source:/tech-docs-github-pages-publisher/source" \
+            --volume "${GITHUB_WORKSPACE}/base-build:/tech-docs-github-pages-publisher/build" \
+            --entrypoint /bin/sh \
+            ghcr.io/ministryofjustice/tech-docs-github-pages-publisher@sha256:35699473dbeefeeb8b597de024125a241277ee03587d5fe8e72545e4b27b33f8 \
+            -c "/usr/local/bin/package && cp artifact.tar build/"
+
+          mkdir -p "${GITHUB_WORKSPACE}/site-base"
+          tar -xf "${GITHUB_WORKSPACE}/base-build/artifact.tar" -C "${GITHUB_WORKSPACE}/site-base"
+
+      - name: Setup Node.js
+        if: steps.detect_changes.outputs.has_changes == 'true'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "20"
+
+      - name: Install Playwright
+        if: steps.detect_changes.outputs.has_changes == 'true'
+        run: |
+          npm install playwright
+          npx playwright install chromium --with-deps
+
+      - name: Take Screenshots
+        id: take_screenshots
+        if: steps.detect_changes.outputs.has_changes == 'true'
+        env:
+          SITE_PR_DIR: ${{ github.workspace }}/site-pr
+          SITE_BASE_DIR: ${{ github.workspace }}/site-base
+          NEW_URL_PATHS: ${{ steps.detect_changes.outputs.new_url_paths }}
+          MODIFIED_URL_PATHS: ${{ steps.detect_changes.outputs.modified_url_paths }}
+          SCREENSHOT_DIR: ${{ github.workspace }}/screenshots
+        run: |
+          mkdir -p "$SCREENSHOT_DIR/new"
+          mkdir -p "$SCREENSHOT_DIR/modified/before"
+          mkdir -p "$SCREENSHOT_DIR/modified/after"
+
+          cat > screenshot.js << 'SCRIPT_EOF'
+          const { chromium } = require('playwright');
+          const http = require('http');
+          const fs = require('fs');
+          const path = require('path');
+
+          const SITE_PR_DIR = process.env.SITE_PR_DIR;
+          const SITE_BASE_DIR = process.env.SITE_BASE_DIR;
+          const NEW_URL_PATHS = (process.env.NEW_URL_PATHS || '').split('\n').filter(p => p.trim());
+          const MODIFIED_URL_PATHS = (process.env.MODIFIED_URL_PATHS || '').split('\n').filter(p => p.trim());
+          const SCREENSHOT_DIR = process.env.SCREENSHOT_DIR;
+
+          const mimeTypes = {
+            '.html': 'text/html',
+            '.css': 'text/css',
+            '.js': 'application/javascript',
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.svg': 'image/svg+xml',
+            '.woff': 'font/woff',
+            '.woff2': 'font/woff2',
+          };
+
+          function createServer(siteDir, port) {
+            const server = http.createServer((req, res) => {
+              let filePath = path.join(siteDir, req.url === '/' ? 'index.html' : req.url);
+
+              if (!path.extname(filePath)) {
+                if (fs.existsSync(filePath + '.html')) {
+                  filePath = filePath + '.html';
+                } else if (fs.existsSync(path.join(filePath, 'index.html'))) {
+                  filePath = path.join(filePath, 'index.html');
+                }
+              }
+
+              const ext = path.extname(filePath);
+              const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+              fs.readFile(filePath, (err, content) => {
+                if (err) {
+                  res.writeHead(404);
+                  res.end('Not found: ' + filePath);
+                } else {
+                  res.writeHead(200, { 'Content-Type': contentType });
+                  res.end(content);
+                }
+              });
+            });
+
+            return new Promise(resolve => {
+              server.listen(port, () => resolve(server));
+            });
+          }
+
+          async function takeScreenshot(page, url, screenshotPath) {
+            console.log(`Taking screenshot of: ${url}`);
+            try {
+              await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+              await page.waitForTimeout(1000);
+              await page.screenshot({ path: screenshotPath, fullPage: true });
+              console.log(`Screenshot saved: ${screenshotPath}`);
+              return true;
+            } catch (error) {
+              console.error(`Failed to screenshot ${url}:`, error.message);
+              return false;
+            }
+          }
+
+          function urlToFilename(urlPath) {
+            return (urlPath.replace(/\//g, '_').replace(/^_/, '') || 'index') + '.png';
+          }
+
+          async function main() {
+            const manifest = {
+              newPages: [],
+              modifiedPages: []
+            };
+
+            const browser = await chromium.launch();
+            const context = await browser.newContext({
+              viewport: { width: 1280, height: 800 }
+            });
+
+            // Screenshot new pages (PR version only)
+            if (NEW_URL_PATHS.length > 0) {
+              console.log('\n=== Capturing new pages ===');
+              const prServer = await createServer(SITE_PR_DIR, 8080);
+
+              for (const urlPath of NEW_URL_PATHS) {
+                const page = await context.newPage();
+                const url = `http://localhost:8080${urlPath.startsWith('/') ? urlPath : '/' + urlPath}`;
+                const filename = urlToFilename(urlPath);
+                const screenshotPath = path.join(SCREENSHOT_DIR, 'new', filename);
+
+                if (await takeScreenshot(page, url, screenshotPath)) {
+                  manifest.newPages.push({ urlPath, filename });
+                }
+                await page.close();
+              }
+
+              prServer.close();
+            }
+
+            // Screenshot modified pages (before and after)
+            if (MODIFIED_URL_PATHS.length > 0 && SITE_BASE_DIR && fs.existsSync(SITE_BASE_DIR)) {
+              console.log('\n=== Capturing modified pages (before) ===');
+              const baseServer = await createServer(SITE_BASE_DIR, 8081);
+
+              for (const urlPath of MODIFIED_URL_PATHS) {
+                const page = await context.newPage();
+                const url = `http://localhost:8081${urlPath.startsWith('/') ? urlPath : '/' + urlPath}`;
+                const filename = urlToFilename(urlPath);
+                const screenshotPath = path.join(SCREENSHOT_DIR, 'modified', 'before', filename);
+
+                await takeScreenshot(page, url, screenshotPath);
+                await page.close();
+              }
+
+              baseServer.close();
+
+              console.log('\n=== Capturing modified pages (after) ===');
+              const prServer = await createServer(SITE_PR_DIR, 8082);
+
+              for (const urlPath of MODIFIED_URL_PATHS) {
+                const page = await context.newPage();
+                const url = `http://localhost:8082${urlPath.startsWith('/') ? urlPath : '/' + urlPath}`;
+                const filename = urlToFilename(urlPath);
+                const screenshotPath = path.join(SCREENSHOT_DIR, 'modified', 'after', filename);
+
+                if (await takeScreenshot(page, url, screenshotPath)) {
+                  manifest.modifiedPages.push({ urlPath, filename });
+                }
+                await page.close();
+              }
+
+              prServer.close();
+            }
+
+            await browser.close();
+
+            fs.writeFileSync(
+              path.join(SCREENSHOT_DIR, 'manifest.json'),
+              JSON.stringify(manifest, null, 2)
+            );
+
+            console.log('\n=== Manifest ===');
+            console.log(JSON.stringify(manifest, null, 2));
+          }
+
+          main().catch(console.error);
+          SCRIPT_EOF
+
+          node screenshot.js
+
+      - name: Upload Screenshots
+        id: upload_screenshots
+        if: steps.detect_changes.outputs.has_changes == 'true'
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: page-screenshots
+          path: ${{ github.workspace }}/screenshots/
+          retention-days: 7
+
+      - name: Post Screenshots to PR
+        if: steps.detect_changes.outputs.has_changes == 'true'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        env:
+          SCREENSHOT_DIR: ${{ github.workspace }}/screenshots
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const screenshotDir = process.env.SCREENSHOT_DIR;
+            const manifestPath = path.join(screenshotDir, 'manifest.json');
+
+            if (!fs.existsSync(manifestPath)) {
+              console.log('No manifest found, skipping comment');
+              return;
+            }
+
+            const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+
+            if (manifest.newPages.length === 0 && manifest.modifiedPages.length === 0) {
+              console.log('No screenshots in manifest, skipping comment');
+              return;
+            }
+
+            // Get artifact URL for download link
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+            });
+
+            const screenshotArtifact = artifacts.data.artifacts.find(a => a.name === 'page-screenshots');
+            const artifactUrl = screenshotArtifact
+              ? `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/artifacts/${screenshotArtifact.id}`
+              : null;
+
+            // Build comment body
+            let body = '## 📸 Page Screenshots\n\n';
+            body += 'This PR includes changes to documentation pages. Screenshots have been captured for review.\n\n';
+
+            // New Pages Section
+            if (manifest.newPages.length > 0) {
+              body += '### ✨ New Pages\n\n';
+              body += '| Page | Status |\n';
+              body += '|------|--------|\n';
+              for (const item of manifest.newPages) {
+                body += `| \`${item.urlPath}\` | 🆕 New |\n`;
+              }
+              body += '\n';
+            }
+
+            // Modified Pages Section
+            if (manifest.modifiedPages.length > 0) {
+              body += '### 📝 Updated Pages\n\n';
+              body += '| Page | Status |\n';
+              body += '|------|--------|\n';
+              for (const item of manifest.modifiedPages) {
+                body += `| \`${item.urlPath}\` | ✏️ Modified |\n`;
+              }
+              body += '\n';
+            }
+
+            // Download section
+            body += '---\n\n';
+            body += '### 📥 Download Screenshots\n\n';
+
+            if (artifactUrl) {
+              body += `[**Download all screenshots**](${artifactUrl})\n\n`;
+            }
+
+            body += '**Artifact structure:**\n';
+            body += '```\n';
+            body += 'screenshots/\n';
+            if (manifest.newPages.length > 0) {
+              body += '├── new/              # Screenshots of new pages\n';
+            }
+            if (manifest.modifiedPages.length > 0) {
+              body += '├── modified/\n';
+              body += '│   ├── before/       # Pages before changes (from main)\n';
+              body += '│   └── after/        # Pages after changes (from this PR)\n';
+            }
+            body += '└── manifest.json     # Index of all screenshots\n';
+            body += '```\n\n';
+
+            body += '> 📐 Screenshots captured at 1280x800 viewport (full page scroll).\n';
+
+            // Check for existing comment to update
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('## 📸 Page Screenshots')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body,
+              });
+              console.log('Updated existing comment');
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+              console.log('Created new comment');
+            }
+
+      - name: No Changes Detected
+        if: steps.detect_changes.outputs.has_changes != 'true'
+        run: |
+          echo "No new or modified pages were detected in this PR."

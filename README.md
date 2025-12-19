@@ -9,14 +9,13 @@ This is the user guide for the [Analytical Platform (AP)](https://controlpanel.s
 
 You can find information here about how to use the AP, including how to:
 
-* get started with the AP
-* use the AP's tools for your work
-* troubleshoot problems and get support
-* find training for AP tools
+- get started with the AP
+- use the AP's tools for your work
+- troubleshoot problems and get support
+- find training for AP tools
 
 This site does not contain:
 
-* MOJ-wide policies or standards
-* general information not specific to the AP (for example, how to use GitHub)
-* training on coding, data skills or AP tools
-
+- MOJ-wide policies or standards
+- general information not specific to the AP (for example, how to use GitHub)
+- training on coding, data skills or AP tools

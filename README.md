@@ -5,17 +5,17 @@
 [!IMPORTANT]
 This documentation site is a sandbox for testing. You should continue to use [Analytical Platform User Guidance](https://user-guidance.analytical-platform.service.justice.gov.uk).
 
-This is the user guide for the [Analytical Platform (AP)](https://controlpanel.services.analytical-platform.service.justice.gov.uk/). The content only includes tools and services the AP team is responsible for maintaining, or those necessary for using the AP.
+This is the user guide for the [Analytical Platform](https://controlpanel.services.analytical-platform.service.justice.gov.uk/). The content only includes tools and services the Analytical Platform team is responsible for maintaining, or those necessary for using the service.
 
-You can find information here about how to use the AP, including how to:
+You can find information here about how to use the Analytical Platform, including:
 
-- get started with the AP
-- use the AP's tools for your work
-- troubleshoot problems and get support
-- find training for AP tools
+- how to get started
+- using Analytical Platform tools for your work
+- troubleshooting problems and getting support
+- where to find training for Analytical Platform tools
 
 This site does not contain:
 
 - MOJ-wide policies or standards
-- general information not specific to the AP (for example, how to use GitHub)
-- training on coding, data skills or AP tools
+- general information not specific to the Analytical Platform (for example, how to use GitHub)
+- training on coding, data skills or Analytical Platform tools

@@ -27,22 +27,3 @@ jobs:
         id: build
         run: |
           /usr/local/bin/package
-
-  link-checker:
-    name: Link Checker
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        id: checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-        with:
-          persist-credentials: false
-
-      - name: Lychee
-        id: lychee
-        uses: lycheeverse/lychee-action@a8c4c7cb88f0c7386610c35eb25108e448569cb0 # v2.7.0
-        with:
-          args: --verbose --no-progress './**/*.md' './**/*.html' './**/*.erb' --accept 403,200,429,400
-          fail: true

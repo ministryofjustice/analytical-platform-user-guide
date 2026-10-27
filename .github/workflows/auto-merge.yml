@@ -1,0 +1,15 @@
+---
+name: 🤖 Dependabot Auto Merge
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  dependabot-auto-merge:
+    name: Dependabot Auto Merge
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ministryofjustice/analytical-platform-github-actions/.github/workflows/reusable-dependabot-gh-actions-auto-merge.yml@feat/auto-approve-dependabot
